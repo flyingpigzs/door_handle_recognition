@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+.venv/
+
+# Mac
+.DS_Store
+
+# PyTorch models
+*.pth
+*.pt
+
+# Dataset
+data/
+
+# Logs
+*.log
+
+# build
+build/
+dist/
+
+# pip
+pip-wheel-metadata/
+
+# pytest
+.pytest_cache/
+
+# Pycharm
+.idea/
+*.iml
