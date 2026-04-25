@@ -18,6 +18,9 @@ venv/
 
 # Dataset
 data/
+test_images/
+prediction_results/
+outputs/
 
 # Logs
 *.log

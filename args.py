@@ -23,4 +23,12 @@ def get_args():
 
     parser.add_argument("--save-path", type=str, default="fasterrcnn_door_handle.pth", help="Model save path")
 
+    parser.add_argument(
+        "--augmentation",
+        type=str,
+        default="conservative",
+        choices=["none", "conservative"],
+        help="Training augmentation: none, or conservative (ColorJitter + random horizontal flip with bbox sync)",
+    )
+
     return parser.parse_args()

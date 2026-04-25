@@ -19,10 +19,16 @@ The goal of the project is to train an object detection model to detect **door h
 ├── dataset.py
 ├── model.py
 ├── trainer.py
+├── predict.py
+├── plot_learning_curve.py
 │
 ├── data/
 │   ├── images/
 │   └── labels/
+│
+├── outputs/
+│   ├── fasterrcnn_door_handle.pth
+│   └── loss_history.csv
 │
 ├── README.md
 └── .gitignore
@@ -30,13 +36,15 @@ The goal of the project is to train an object detection model to detect **door h
 
 ### File descriptions
 
-| File | Description |
-|------|------------|
-| args.py | Defines training arguments and hyperparameters |
-| main.py | Entry point, creates loaders and starts training |
-| dataset.py | Loads images and YOLO labels |
-| model.py | Defines Faster R-CNN model |
-| trainer.py | Training and validation loops |
+| File                   | Description                                      |
+|------------------------|--------------------------------------------------|
+| args.py                | Defines training arguments and hyperparameters   |
+| main.py                | Entry point, creates loaders and starts training |
+| dataset.py             | Loads images and YOLO labels                     |
+| model.py               | Defines Faster R-CNN model                       |
+| trainer.py             | Training and validation loops                    |
+| predict.py             | Run inference on test images                     |
+| plot_learning_curve.py | Plot training / validation loss curve            |
 
 ---
 
@@ -45,6 +53,8 @@ The goal of the project is to train an object detection model to detect **door h
 Images were captured manually (~100 images).
 
 Annotation was done using **CVAT**.
+
+The dataset is automatically split into training and validation sets inside `main.py`.
 
 Export format: 
 
@@ -104,11 +114,56 @@ Example:
 
 ```python main.py –epochs 15 –batch-size 4```
 
-The best model will be saved as:
+During training:
 
-```fasterrcnn_door_handle.pth```
+- Training loss and validation loss are recorded
+- Best model is saved automatically
+- Results are stored in the outputs folder
+
+Outputs:
+
+outputs/
+  fasterrcnn_door_handle.pth
+  loss_history.csv
 
 ---
+
+## Learning Curve
+
+After training, loss history is saved as:
+
+```outputs/loss_history.csv```
+
+To plot the learning curve:
+
+```python plot_learning_curve.py```
+
+or
+
+```python plot_learning_curve.py --csv outputs/loss_history.csv```
+
+## Prediction
+
+To run inference on new images, place images inside:
+
+test_images/
+
+Then run:
+
+```python predict.py```
+
+Optional parameters:
+
+```python predict.py --threshold 0.3 --topk 1```
+
+Arguments:
+
+--threshold : confidence threshold  
+--topk : keep only top-k detections per image  
+
+Prediction results will be saved to:
+
+```prediction_results/```
 
 ## Requirements
 
@@ -119,3 +174,18 @@ Recommended Python version:
 Install dependencies:
 
 ```pip install -r requirements.txt```
+
+## Outputs
+
+Training results are saved in:
+
+```outputs/```
+
+Files:
+
+fasterrcnn_door_handle.pth  → best model  
+loss_history.csv            → loss per epoch  
+
+Prediction results are saved in:
+
+```prediction_results/```

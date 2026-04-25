@@ -1,3 +1,4 @@
+import csv
 import os
 import random
 from pathlib import Path
@@ -6,6 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from args import get_args
+from augmentations import get_conservative_train_transforms
 from dataset import DoorHandleDataset
 from model import get_model
 from trainer import train_one_epoch, validate_one_epoch, collate_fn
@@ -32,6 +34,17 @@ def split_dataset(image_dir, train_split=0.8, seed=42):
     return train_files, val_files
 
 
+def save_loss_history(history, save_path):
+    with open(save_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["epoch", "train_loss", "val_loss"])
+
+        for row in history:
+            writer.writerow([row["epoch"], row["train_loss"], row["val_loss"]])
+
+    print(f"Loss history saved to {save_path}")
+
+
 def main():
     args = get_args()
     set_seed(args.seed)
@@ -42,14 +55,34 @@ def main():
     image_dir = os.path.join(args.data_dir, args.image_dir)
     label_dir = os.path.join(args.data_dir, args.label_dir)
 
+    outputs_dir = Path("outputs")
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+
+    model_save_path = outputs_dir / args.save_path
+    loss_csv_path = outputs_dir / "loss_history.csv"
+
     train_files, val_files = split_dataset(image_dir, args.train_split, args.seed)
 
     print(f"Total images: {len(train_files) + len(val_files)}")
     print(f"Training images: {len(train_files)}")
     print(f"Validation images: {len(val_files)}")
 
-    train_dataset = DoorHandleDataset(image_dir=image_dir, label_dir=label_dir, image_files=train_files)
-    val_dataset = DoorHandleDataset(image_dir=image_dir, label_dir=label_dir, image_files=val_files)
+    train_transforms = (
+        get_conservative_train_transforms() if args.augmentation == "conservative" else None
+    )
+    print(f"Training augmentation: {args.augmentation}")
+
+    train_dataset = DoorHandleDataset(
+        image_dir=image_dir,
+        label_dir=label_dir,
+        image_files=train_files,
+        transforms=train_transforms,
+    )
+    val_dataset = DoorHandleDataset(
+        image_dir=image_dir,
+        label_dir=label_dir,
+        image_files=val_files,
+    )
 
     train_loader = DataLoader(
         train_dataset,
@@ -79,15 +112,24 @@ def main():
     )
 
     best_val_loss = float("inf")
+    history = []
 
     for epoch in range(1, args.epochs + 1):
-        train_one_epoch(model, train_loader, optimizer, device, epoch)
+        train_loss = train_one_epoch(model, train_loader, optimizer, device, epoch)
         val_loss = validate_one_epoch(model, val_loader, device, epoch)
+
+        history.append({
+            "epoch": epoch,
+            "train_loss": train_loss,
+            "val_loss": val_loss,
+        })
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), args.save_path)
-            print(f"Best model saved to {args.save_path}")
+            torch.save(model.state_dict(), model_save_path)
+            print(f"Best model saved to {model_save_path}")
+
+    save_loss_history(history, loss_csv_path)
 
     print("Training finished.")
 
